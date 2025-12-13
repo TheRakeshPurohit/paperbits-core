@@ -9,6 +9,7 @@ import {
     BackgroundStylePluginConfig,
     TypographyStylePluginConfig,
     MarginStylePluginConfig,
+    PaddingStylePluginConfig,
     SizeStylePluginConfig,
     BoxStylePluginConfig,
     BorderStylePluginConfig,
@@ -44,6 +45,9 @@ export class SectionEditor {
         this.sectionSizeStyles = ko.observable<SizeStylePluginConfig>();
         this.sectionBox = ko.observable<BoxStylePluginConfig>();
         this.containerBox = ko.observable<BoxStylePluginConfig>();
+
+        this.updateObservables = this.updateObservables.bind(this);
+        this.applyChanges = this.applyChanges.bind(this);
     }
 
     @Param()
@@ -89,11 +93,15 @@ export class SectionEditor {
         this.gridModel = <GridModel>this.model.widgets[0];
         const gridLocalStyles = this.gridModel.styles;
 
-        const marginStyles = <MarginStylePluginConfig>StyleHelper.getPluginConfigForLocalStyles(gridLocalStyles, "margin", viewport);
-        const paddingStyles = <MarginStylePluginConfig>StyleHelper.getPluginConfigForLocalStyles(gridLocalStyles, "padding", viewport);
+        // Keep container box styles non-responsive (same behavior as other widget editors).
+        // This prevents writing margin/padding into a breakpoint bucket that may not be active.
+        const marginStyles = <MarginStylePluginConfig>StyleHelper.getPluginConfigForLocalStyles(gridLocalStyles, "margin");
+        const paddingStyles = <PaddingStylePluginConfig>StyleHelper.getPluginConfigForLocalStyles(gridLocalStyles, "padding");
 
         this.containerBox({ margin: marginStyles, padding: paddingStyles });
-        this.containerSizeStyles(gridLocalStyles.instance.size);
+
+        const containerSizeStyles = <SizeStylePluginConfig>StyleHelper.getPluginConfigForLocalStyles(gridLocalStyles, "size", viewport);
+        this.containerSizeStyles(containerSizeStyles);
 
         const borderStyles = sectionStyles.plugin("border").getConfig<BorderStylePluginConfig>();
         const borderRadiusStyles = sectionStyles.plugin("borderRadius").getConfig<BorderRadiusStylePluginConfig>();
@@ -116,7 +124,6 @@ export class SectionEditor {
         const sectionStyles = this.model.styles;
         StyleHelper.setPluginConfigForLocalStyles(sectionStyles, "stickTo", this.stickTo(), viewport);
         StyleHelper.setPluginConfigForLocalStyles(sectionStyles, "size", this.sectionSizeStyles(), viewport);
-        StyleHelper.setPluginConfigForLocalStyles(this.model.styles, "stickTo", this.stickTo(), viewport);
 
         /* Grid styles */
         const gridStyles = this.gridModel.styles;
@@ -125,8 +132,8 @@ export class SectionEditor {
         const containerSizeStyles: SizeStylePluginConfig = this.containerSizeStyles();
 
         StyleHelper.setPluginConfigForLocalStyles(gridStyles, "size", containerSizeStyles);
-        StyleHelper.setPluginConfigForLocalStyles(gridStyles, "margin", marginStyle, viewport);
-        StyleHelper.setPluginConfigForLocalStyles(gridStyles, "padding", paddingStyle, viewport);
+        StyleHelper.setPluginConfigForLocalStyles(gridStyles, "margin", marginStyle);
+        StyleHelper.setPluginConfigForLocalStyles(gridStyles, "padding", paddingStyle);
 
         this.onChange(this.model);
     }
